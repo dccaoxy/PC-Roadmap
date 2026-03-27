@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>产品详情 - Roadmap</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div class="container product-detail">
+    <!-- 返回链接 -->
+    <a href="index.html" class="back-link">← 返回 Roadmap</a>
+
+    <!-- 加载状态 -->
+    <div id="loading" class="loading">加载中...</div>
+
+    <!-- 产品详情卡片 -->
+    <div id="product-card" class="product-detail-card" style="display: none;">
+      <div class="product-detail-layout">
+        <!-- 左侧图片 -->
+        <div class="product-image-section">
+          <img id="product-image" src="" alt="产品图片">
+        </div>
+
+        <!-- 右侧信息 -->
+        <div class="product-info-section">
+          <h1 class="product-title" id="product-name">-</h1>
+          
+          <div class="product-basic-info">
+            <span class="badge" id="product-brand">-</span>
+            <span class="badge" id="product-category">-</span>
+          </div>
+
+          <div class="product-price-detail" id="product-price">¥-</div>
+
+          <!-- 核心参数 -->
+          <div class="product-params">
+            <div class="param-item">
+              <span class="param-label">CPU</span>
+              <span class="param-value" id="param-cpu">-</span>
+            </div>
+            <div class="param-item">
+              <span class="param-label">显卡</span>
+              <span class="param-value" id="param-gpu">-</span>
+            </div>
+            <div class="param-item">
+              <span class="param-label">内存</span>
+              <span class="param-value" id="param-ram">-</span>
+            </div>
+            <div class="param-item">
+              <span class="param-label">硬盘</span>
+              <span class="param-value" id="param-storage">-</span>
+            </div>
+            <div class="param-item">
+              <span class="param-label">屏幕尺寸</span>
+              <span class="param-value" id="param-screen">-</span>
+            </div>
+            <div class="param-item">
+              <span class="param-label">来源平台</span>
+              <span class="param-value" id="param-source">-</span>
+            </div>
+          </div>
+
+          <!-- 性能评分 -->
+          <div class="performance-section">
+            <h4>性能评分</h4>
+            <div class="performance-bar">
+              <div class="performance-bar-fill" id="performance-fill" style="width: 0%"></div>
+              <span class="performance-bar-text" id="performance-text">-/100</span>
+            </div>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="product-actions">
+            <a href="#" id="source-link" class="btn btn-outline" target="_blank" rel="noopener">
+              来源链接
+            </a>
+            <button class="btn btn-danger" id="delete-btn">删除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 错误状态 -->
+    <div id="error" class="empty-state" style="display: none;">
+      <h3>加载失败</h3>
+      <p id="error-message">无法获取产品信息</p>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <script src="scripts/api.js"></script>
+  <script>
+    // ========== 详情页逻辑 ==========
+
+    /**
+     * 显示 Toast 通知
+     */
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} visible`;
+      setTimeout(() => toast.classList.remove('visible'), 3000);
+    }
+
+    /**
+     * 获取 URL 参数
+     */
+    function getUrlParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    /**
+     * 加载产品数据
+     */
+    async function loadProduct() {
+      const loading = document.getElementById('loading');
+      const productCard = document.getElementById('product-card');
+      const errorDiv = document.getElementById('error');
+
+      const productId = getUrlParam('id');
+
+      if (!productId) {
+        errorDiv.style.display = 'block';
+        document.getElementById('error-message').textContent = '缺少产品 ID 参数';
+        loading.style.display = 'none';
+        return;
+      }
+
+      try {
+        const response = await api.getProduct(productId);
+
+        if (!response.success || !response.data) {
+          throw new Error(response.error || '产品不存在');
+        }
+
+        const product = response.data;
+        renderProduct(product);
+
+        loading.style.display = 'none';
+        productCard.style.display = 'block';
+
+      } catch (error) {
+        console.error('Load product error:', error);
+        loading.style.display = 'none';
+        errorDiv.style.display = 'block';
+        document.getElementById('error-message').textContent = error.message || '加载失败';
+      }
+    }
+
+    /**
+     * 渲染产品信息
+     */
+    function renderProduct(product) {
+      // 基本信息
+      document.title = `${product.name} - Roadmap`;
+
+      const nameEl = document.getElementById('product-name');
+      nameEl.textContent = product.name || '未知产品';
+
+      document.getElementById('product-brand').textContent = product.brand || '-';
+      document.getElementById('product-category').textContent = product.category || '-';
+
+      const priceEl = document.getElementById('product-price');
+      priceEl.textContent = product.price ? `¥${product.price.toLocaleString()}` : '价格未知';
+
+      // 图片
+      const imgEl = document.getElementById('product-image');
+      if (product.image_url) {
+        imgEl.src = product.image_url;
+        imgEl.onerror = () => {
+          imgEl.style.display = 'none';
+        };
+      } else {
+        imgEl.style.display = 'none';
+      }
+
+      // 参数
+      document.getElementById('param-cpu').textContent = product.cpu || '-';
+      document.getElementById('param-gpu').textContent = product.gpu || '-';
+      document.getElementById('param-ram').textContent = product.ram || '-';
+      document.getElementById('param-storage').textContent = product.storage || '-';
+
+      const screenEl = document.getElementById('param-screen');
+      screenEl.textContent = product.screen_size ? `${product.screen_size} 英寸` : '-';
+
+      const sourceEl = document.getElementById('param-source');
+      sourceEl.textContent = (product.source || '-').toUpperCase();
+
+      // 性能评分
+      const score = product.performance_score || 0;
+      const performanceFill = document.getElementById('performance-fill');
+      const performanceText = document.getElementById('performance-text');
+
+      performanceFill.style.width = `${score}%`;
+      performanceText.textContent = `${score}/100`;
+
+      // 来源链接
+      const sourceLink = document.getElementById('source-link');
+      if (product.source_url) {
+        sourceLink.href = product.source_url;
+        sourceLink.style.display = 'inline-flex';
+      } else {
+        sourceLink.style.display = 'none';
+      }
+
+      // 删除按钮
+      const deleteBtn = document.getElementById('delete-btn');
+      deleteBtn.onclick = () => handleDelete(product.id, product.name);
+    }
+
+    /**
+     * 处理删除
+     */
+    async function handleDelete(productId, productName) {
+      const confirmed = confirm(`确定要删除产品 "${productName}" 吗？此操作不可恢复。`);
+
+      if (!confirmed) return;
+
+      try {
+        const result = await api.deleteProduct(productId);
+
+        if (!result.success) {
+          throw new Error(result.error || '删除失败');
+        }
+
+        showToast('产品已删除', 'success');
+
+        // 延迟跳转，让用户看到提示
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1500);
+
+      } catch (error) {
+        console.error('Delete error:', error);
+        showToast(error.message || '删除失败', 'error');
+      }
+    }
+
+    // 页面加载
+    document.addEventListener('DOMContentLoaded', loadProduct);
+  </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roadmap 产品可视化平台</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container header-content">
+      <div class="logo">📊 Roadmap 产品可视化</div>
+
+      <!-- 链接输入区 (Phase 4) -->
+      <div class="link-input-section">
+        <input 
+          type="text" 
+          id="product-link-input" 
+          placeholder="🔍 粘贴商品链接添加新品（支持京东/淘宝/天猫）"
+        >
+        <button class="btn btn-primary" id="add-product-btn">
+          添加产品
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <div class="container">
+      <!-- 品牌筛选区 -->
+      <section class="brand-filter-section">
+        <div class="section-label">品牌筛选</div>
+        <div id="brand-filter">
+          <div class="loading">加载中...</div>
+        </div>
+      </section>
+
+      <!-- 标签筛选区 -->
+      <section class="tag-filter-section">
+        <div class="section-label">类型筛选</div>
+        <div id="tag-filter"></div>
+      </section>
+
+      <!-- 参数筛选区 -->
+      <section class="param-filter-section" id="param-filter">
+        <!-- 由 ParamFilter 组件动态渲染 -->
+      </section>
+
+      <!-- 散点图区域 -->
+      <section class="chart-container">
+        <div id="scatter-chart">
+          <div class="loading">加载中...</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+  <!-- Scripts -->
+  <script src="scripts/api.js"></script>
+  <script src="scripts/components/BrandFilter.js"></script>
+  <script src="scripts/components/ParamFilter.js"></script>
+  <script src="scripts/components/ScatterPlot.js"></script>
+  <script src="scripts/components/TagFilter.js"></script>
+  <script src="scripts/components/ProductCard.js"></script>
+  <script src="scripts/app.js"></script>
+</body>
+</html>
