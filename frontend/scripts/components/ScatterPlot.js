@@ -252,27 +252,8 @@ class ScatterPlot {
     });
 
     // 是否显示标签（数据少时显示）
-    const showLabels = products.length <= 15;
-    // 标签配置
-    const labelConfig = showLabels ? {
-      show: true,
-      position: 'right',
-      distance: 8,
-      fontSize: 11,
-      color: '#475569',
-      backgroundColor: 'rgba(255,255,255,0.85)',
-      padding: [3, 6],
-      borderRadius: 3,
-      shadowBlur: 3,
-      shadowColor: 'rgba(0,0,0,0.1)',
-      shadowOffsetX: 1,
-      shadowOffsetY: 1,
-      formatter: (params) => {
-        const name = params.data._product?.name || '';
-        // 名称超长时截断
-        return name.length > 18 ? name.substring(0, 16) + '...' : name;
-      },
-    } : { show: false };
+    // 标签配置 - 关闭，使用 tooltip 显示完整信息
+    const labelConfig = { show: false };
 
     // 构建系列
     const series = this.brands.map((brand, index) => {
