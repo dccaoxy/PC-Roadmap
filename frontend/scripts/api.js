@@ -3,7 +3,7 @@
  * 默认 API 地址为 http://localhost:3000，可通过环境变量覆盖
  */
 
-const API_BASE = 'http://192.168.0.13:3001';
+const API_BASE = 'http://192.168.0.9:3001';
 
 /**
  * 通用 fetch 封装
@@ -115,10 +115,8 @@ async function getBrands() {
  * @param {Object} productData - 产品数据
  */
 async function checkDuplicate(productData) {
-  return apiRequest('/api/products/check-duplicate', {
-    method: 'POST',
-    body: productData,
-  });
+  const query = new URLSearchParams({ name: productData.name, brand: productData.brand, cpu: productData.cpu || '' });
+  return apiRequest(`/api/products/check-duplicate?${query}`);
 }
 
 /**

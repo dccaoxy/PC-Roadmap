@@ -14,6 +14,7 @@ class ParamFilter {
       storage: '',
       gpu: '',
       screen_size: '',
+      series: [],
     };
     this.availableOptions = {
       cpu_type: ['Intel', 'AMD', 'Apple'],
@@ -22,6 +23,7 @@ class ParamFilter {
       storage: [],
       gpu: [],
       screen_size: [],
+      series: [],
     };
   }
 
@@ -35,6 +37,7 @@ class ParamFilter {
       storage: new Set(),
       gpu: new Set(),
       screen_size: new Set(),
+      series: new Set(),
     };
 
     // CPU类型（从CPU型号中提取）
@@ -51,6 +54,7 @@ class ParamFilter {
       if (p.storage) options.storage.add(p.storage);
       if (p.gpu) options.gpu.add(p.gpu);
       if (p.screen_size) options.screen_size.add(p.screen_size);
+      if (p.series) options.series.add(p.series);
     });
 
     // 转换为排序后的数组
@@ -61,6 +65,7 @@ class ParamFilter {
       storage: this.sortStorage(Array.from(options.storage)),
       gpu: Array.from(options.gpu).sort(),
       screen_size: Array.from(options.screen_size).map(v => parseFloat(v)).sort((a, b) => a - b).map(v => v.toString()),
+      series: Array.from(options.series).sort(),
     };
 
     this.render();
@@ -190,6 +195,32 @@ class ParamFilter {
         </select>
       </div>
 
+      <div class="param-filter-group series-filter-group">
+        <label>产品系列</label>
+        <div class="series-dropdown" id="series-dropdown">
+          <button type="button" class="series-dropdown-trigger" id="series-trigger">
+            <span class="series-dropdown-text">全部</span>
+            <span class="series-dropdown-arrow">▼</span>
+          </button>
+          <div class="series-dropdown-panel" id="series-panel" style="display:none;">
+            <div class="series-dropdown-search">
+              <input type="text" placeholder="搜索..." id="series-search">
+            </div>
+            <div class="series-dropdown-checkboxes" id="series-checkboxes">
+              ${this.availableOptions.series.map(opt => `
+                <div class="series-checkbox-item" data-value="${opt}">
+                  <span class="series-checkbox-box${this.filters.series.includes(opt) ? ' checked' : ''}" data-checkbox="${opt}"></span>
+                  <span class="series-checkbox-text">${opt}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="series-dropdown-footer">
+              <button type="button" class="series-dropdown-close" id="series-close-btn">完成</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="filter-actions">
         <button class="btn btn-outline btn-sm" id="clear-filters">清空筛选</button>
       </div>
@@ -207,14 +238,103 @@ class ParamFilter {
     selects.forEach(select => {
       select.addEventListener('change', (e) => {
         const param = e.target.dataset.param;
-        this.filters[param] = e.target.value;
+        if (param === 'series') {
+          // 多选：获取所有选中项
+          const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
+          this.filters.series = selected;
+        } else {
+          this.filters[param] = e.target.value;
+        }
         this.notifyChange();
       });
     });
 
+    // 系列下拉多选事件
+    const trigger = this.container.querySelector('#series-trigger');
+    const panel = this.container.querySelector('#series-panel');
+    const checkboxesContainer = this.container.querySelector('#series-checkboxes');
+
+    if (trigger && panel) {
+      let panelOpen = false;
+
+      const openPanel = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        panelOpen = true;
+        panel.style.display = 'block';
+      };
+
+      const closePanel = () => {
+        panelOpen = false;
+        panel.style.display = 'none';
+      };
+
+      trigger.addEventListener('click', openPanel);
+
+      // 点击选项时切换选中状态
+      checkboxesContainer.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const item = e.target.closest('.series-checkbox-item');
+        if (item) {
+          const value = item.dataset.value;
+          const box = item.querySelector('.series-checkbox-box');
+
+          // 切换选中状态
+          if (this.filters.series.includes(value)) {
+            this.filters.series = this.filters.series.filter(v => v !== value);
+            box.classList.remove('checked');
+          } else {
+            this.filters.series.push(value);
+            box.classList.add('checked');
+          }
+
+          this.updateSeriesDropdownText();
+          this.notifyChange();
+        }
+      });
+
+      // 阻止面板内的点击冒泡
+      panel.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      // 完成按钮关闭面板
+      const closeBtn = this.container.querySelector('#series-close-btn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closePanel();
+        });
+      }
+
+      // 点击外部关闭
+      document.addEventListener('click', (e) => {
+        if (panelOpen && !panel.contains(e.target) && e.target !== trigger) {
+          closePanel();
+        }
+      });
+
+      this.updateSeriesDropdownText();
+    }
+
     const clearBtn = this.container.querySelector('#clear-filters');
     if (clearBtn) {
       clearBtn.addEventListener('click', () => this.clear());
+    }
+  }
+
+  /**
+   * 更新系列下拉按钮文字
+   */
+  updateSeriesDropdownText() {
+    const textEl = this.container.querySelector('.series-dropdown-text');
+    if (!textEl) return;
+    if (this.filters.series.length === 0) {
+      textEl.textContent = '全部';
+    } else if (this.filters.series.length === 1) {
+      textEl.textContent = this.filters.series[0];
+    } else {
+      textEl.textContent = `已选 ${this.filters.series.length}`;
     }
   }
 
@@ -239,9 +359,14 @@ class ParamFilter {
    */
   clear() {
     Object.keys(this.filters).forEach(key => {
-      this.filters[key] = '';
+      if (key === 'series') {
+        this.filters[key] = [];
+      } else {
+        this.filters[key] = '';
+      }
     });
     this.render();
+    this.updateSeriesDropdownText();
     this.notifyChange();
   }
 

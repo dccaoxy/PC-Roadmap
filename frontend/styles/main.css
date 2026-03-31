@@ -261,6 +261,161 @@ header {
   border-color: var(--color-primary);
 }
 
+.param-filter-group select[multiple] {
+  min-width: 150px;
+  height: auto;
+  padding: 4px 8px;
+}
+
+/* Excel风格系列下拉多选 */
+.series-filter-group {
+  position: relative;
+}
+
+.series-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  background: white;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.series-dropdown-trigger:hover {
+  border-color: var(--color-primary);
+}
+
+.series-dropdown-arrow {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  margin-left: auto;
+}
+
+.series-dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  min-width: 200px;
+  max-width: 300px;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  margin-top: 4px;
+}
+
+.series-dropdown-search {
+  margin-bottom: 8px;
+}
+
+.series-dropdown-search input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.series-dropdown-search input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.series-dropdown-checkboxes {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.series-dropdown-footer {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+  text-align: right;
+}
+
+.series-dropdown-close {
+  padding: 4px 12px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.series-dropdown-close:hover {
+  background: var(--color-primary-dark);
+}
+
+.series-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.series-checkbox-label:hover {
+  background: var(--color-bg);
+}
+
+.series-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+
+.series-checkbox-item:hover {
+  background: var(--color-bg);
+}
+
+.series-checkbox-box {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.series-checkbox-box::after {
+  content: '✓';
+  font-size: 12px;
+  color: white;
+  display: none;
+}
+
+.series-checkbox-box.checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.series-checkbox-box.checked::after {
+  display: block;
+}
+
+.series-checkbox-text {
+  font-size: 13px;
+  color: var(--color-text);
+}
+
 .filter-actions {
   margin-left: auto;
 }
@@ -477,6 +632,36 @@ main {
   font-size: 24px;
   font-weight: 700;
   color: var(--color-danger);
+}
+
+.edit-field {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.edit-field:focus {
+  border-color: var(--color-primary);
+}
+
+.edit-field::placeholder {
+  color: #adb5bd;
+}
+
+input[type="number"].edit-field {
+  -moz-appearance: textfield;
+}
+
+input[type="number"].edit-field::-webkit-outer-spin-button,
+input[type="number"].edit-field::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* ===== Product Detail Page ===== */

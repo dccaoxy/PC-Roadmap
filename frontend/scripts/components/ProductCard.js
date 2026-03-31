@@ -89,18 +89,20 @@ class ProductCard {
 
   /**
    * 根据鼠标事件定位卡片
+   * ECharts tooltip 在右边，ProductCard 强制放左边
    */
   positionAtEvent(event) {
     const padding = 15;
     const cardWidth = 280;
     const cardHeight = this.card.offsetHeight || 220;
 
-    let left = event.clientX + padding;
+    // 强制卡片显示在鼠标左边，避免和 ECharts tooltip 重叠
+    let left = event.clientX - cardWidth - padding;
     let top = event.clientY + padding;
 
-    // 边界检测 - 右侧
-    if (left + cardWidth > window.innerWidth - padding) {
-      left = event.clientX - cardWidth - padding;
+    // 边界检测 - 左侧
+    if (left < padding) {
+      left = event.clientX + padding;
     }
 
     // 边界检测 - 底部
@@ -118,6 +120,7 @@ class ProductCard {
 
   /**
    * 移动卡片到指定位置（跟随鼠标）
+   * ECharts tooltip 在右边，ProductCard 强制放左边
    */
   move(event) {
     if (!this.visible) return;
@@ -126,11 +129,12 @@ class ProductCard {
     const cardWidth = 280;
     const cardHeight = this.card.offsetHeight || 220;
 
-    let left = event.clientX + padding;
+    // 强制卡片显示在鼠标左边
+    let left = event.clientX - cardWidth - padding;
     let top = event.clientY + padding;
 
-    if (left + cardWidth > window.innerWidth - padding) {
-      left = event.clientX - cardWidth - padding;
+    if (left < padding) {
+      left = event.clientX + padding;
     }
 
     if (top + cardHeight > window.innerHeight - padding) {

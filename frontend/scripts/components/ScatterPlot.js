@@ -99,6 +99,107 @@ class ScatterPlot {
   }
 
   /**
+   * 生成系列简称
+   */
+  getSeriesAbbr(seriesName) {
+    if (!seriesName || seriesName === 'Other') return '-';
+    // 规则：
+    // 1. 去除品牌前缀（假设品牌名已在系列名中重复）
+    // 2. 常见系列缩写
+    const abbrMap = {
+      'OMEN 16': 'OMEN',
+      'OMEN 17': 'OMEN',
+      'ENVY x360': 'ENVY x360',
+      'Pavilion Plus': 'Pav+',
+      'Pavilion Aero': 'Pav Aero',
+      'Pavilion Gaming': 'Pav Gm',
+      'OmniBook 3': 'OB3',
+      'OmniBook 5': 'OB5',
+      'OmniBook 7': 'OB7',
+      'OmniBook Ultra': 'OB Ultra',
+      'OmniBook Flip': 'OB Flip',
+      'Victus 15': 'Victus 15',
+      'Victus 16': 'Victus 16',
+      'Spectre x360': 'Sp x360',
+      'Envy x360': 'ENVY x360',
+      'P14 Pro': 'P14 Pro',
+      'P16 Pro': 'P16 Pro',
+      'P16s': 'P16s',
+      'P14s': 'P14s',
+      'T14': 'T14',
+      'T14s': 'T14s',
+      'T16': 'T16',
+      'X1 Carbon': 'X1 C',
+      'X1 Yoga': 'X1 Y',
+      'ThinkBook 14': 'TB14',
+      'ThinkBook 15': 'TB15',
+      'ThinkBook 16': 'TB16',
+      'IdeaPad 5': 'IP5',
+      'IdeaPad 5 Pro': 'IP5 Pro',
+      'IdeaPad Gaming': 'IP Gm',
+      'Legion 5': 'Leg5',
+      'Legion 5 Pro': 'Leg5 Pro',
+      'Legion 7': 'Leg7',
+      'Legion 9': 'Leg9',
+      'Yoga 6': 'Yoga6',
+      'Yoga 7': 'Yoga7',
+      'Yoga 9': 'Yoga9',
+      'Yoga Air': 'Yoga Air',
+      'Swift 3': 'Sw3',
+      'Swift 5': 'Sw5',
+      'Aspire 5': 'Asp5',
+      'Aspire 7': 'Asp7',
+      'Predator': 'Pred',
+      'Nitro 5': 'Nitro5',
+      'Nitro 7': 'Nitro7',
+    };
+    if (abbrMap[seriesName]) return abbrMap[seriesName];
+
+    // 通用缩写规则
+    let abbr = seriesName
+      .replace(/HP\s*/gi, '')
+      .replace(/Dell\s*/gi, '')
+      .replace(/Lenovo\s*/gi, '')
+      .replace(/ASUS\s*/gi, '')
+      .replace(/Acer\s*/gi, '')
+      .replace(/Microsoft\s*/gi, '')
+      .replace(/Apple\s*/gi, '')
+      .replace(/Huawei\s*/gi, '')
+      .replace(/Xiaomi\s*/gi, '')
+      .replace(/Razer\s*/gi, '')
+      .replace(/MSI\s*/gi, '')
+      .replace(/Gigabyte\s*/gi, '');
+
+    // 进一步缩短
+    if (abbr.length > 10) {
+      abbr = abbr
+        .replace(/OmniBook/gi, 'OB')
+        .replace(/Pavilion/gi, 'Pav')
+        .replace(/IdeaPad/gi, 'IP')
+        .replace(/ThinkPad/gi, 'TP')
+        .replace(/ThinkBook/gi, 'TB')
+        .replace(/Legion/gi, 'Leg')
+        .replace(/Victus/gi, 'Vic')
+        .replace(/Inspiron/gi, 'Ins')
+        .replace(/Latitude/gi, 'Lat')
+        .replace(/Precision/gi, 'Pre')
+        .replace(/Swift/gi, 'Sw')
+        .replace(/Aspire/gi, 'Asp')
+        .replace(/Predator/gi, 'Pred')
+        .replace(/Nitro/gi, 'Nit')
+        .replace(/Surface/gi, 'Sf')
+        .replace(/Yoga/gi, 'Yg')
+        .replace(/Spectre/gi, 'Sp')
+        .replace(/Envy/gi, 'En')
+        .replace(/ProBook/gi, 'PB')
+        .replace(/EliteBook/gi, 'EB')
+        .replace(/Book/gi, 'Bk');
+    }
+
+    return abbr.trim() || seriesName;
+  }
+
+  /**
    * 更新数据并渲染
    * @param {Array} products - 产品列表
    */
@@ -123,10 +224,16 @@ class ScatterPlot {
     // 按最低价排序series，得到X轴位置（从1开始）
     const sortedSeries = Object.entries(seriesMinPrice)
       .sort((a, b) => a[1] - b[1])
-      .map(([s], i) => ({ series: s, x: i + 1 }));
+      .map(([s], i) => ({ series: s, x: i + 1, abbr: this.getSeriesAbbr(s) }));
 
     const seriesToX = {};
     sortedSeries.forEach(item => { seriesToX[item.series] = item.x; });
+
+    // X轴标签：位置到(全称,简称)的映射
+    const xLabelMap = {};
+    sortedSeries.forEach(item => {
+      xLabelMap[item.x] = { name: item.series, abbr: item.abbr };
+    });
 
     // 按品牌分组，X用series位置
     const brandData = {};
@@ -287,7 +394,7 @@ class ScatterPlot {
         left: 70,
         right: this.brands.length > 5 ? 180 : 100,
         top: 60,
-        bottom: 60,
+        bottom: 120,
       },
       xAxis: {
         type: 'value',
@@ -305,10 +412,21 @@ class ScatterPlot {
         },
         axisTick: {
           lineStyle: { color: '#e2e8f0' },
+          alignWithLabel: true,
         },
         axisLabel: {
           color: '#64748b',
           fontSize: 11,
+          interval: 0,
+          rotate: -90,
+          margin: 12,
+          formatter: (value) => {
+            const info = xLabelMap[value];
+            if (!info) return '';
+            return info.abbr || info.name;
+          },
+          overflow: 'truncate',
+          width: 60,
         },
         splitLine: {
           lineStyle: {

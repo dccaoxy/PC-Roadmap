@@ -22,7 +22,6 @@ class App {
    */
   async init() {
     this.initToast();
-    this.bindLinkInput();
     await this.loadData();
     this.initComponents();
     this.bindEvents();
@@ -47,197 +46,6 @@ class App {
     setTimeout(() => {
       this.toast.classList.remove('visible');
     }, 3000);
-  }
-
-  /**
-   * 绑定链接输入功能
-   */
-  bindLinkInput() {
-    const addBtn = document.getElementById('add-product-btn');
-    const linkInput = document.getElementById('product-link-input');
-
-    if (addBtn && linkInput) {
-      addBtn.addEventListener('click', () => this.handleAddProduct(linkInput.value));
-      linkInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          this.handleAddProduct(linkInput.value);
-        }
-      });
-    }
-  }
-
-  /**
-   * 处理添加产品
-   */
-  async handleAddProduct(url) {
-    if (!url || !url.trim()) {
-      this.showToast('请输入商品链接', 'warning');
-      return;
-    }
-
-    const addBtn = document.getElementById('add-product-btn');
-    addBtn.disabled = true;
-    addBtn.textContent = '解析中...';
-
-    try {
-      // 1. 调用链接解析 API
-      const parseResult = await api.parseLink(url.trim());
-
-      if (!parseResult.success) {
-        throw new Error(parseResult.error || '解析链接失败');
-      }
-
-      const productData = parseResult.data;
-
-      // 2. 检测重复
-      const dupResult = await api.checkDuplicate({
-        name: productData.name,
-        brand: productData.brand,
-      });
-
-      if (dupResult.isDuplicate && dupResult.existingProduct) {
-        // 重复产品
-        const goToDetail = confirm(`该产品已存在: ${dupResult.existingProduct.name}\n\n点击"确定"查看详情，或"取消"返回。`);
-        if (goToDetail) {
-          window.location.href = `product.html?id=${dupResult.existingProduct.id}`;
-        }
-        return;
-      }
-
-      // 3. 显示确认预览
-      this.showConfirmModal(productData);
-
-    } catch (error) {
-      console.error('Add product error:', error);
-      this.showToast(error.message || '解析链接失败，请检查链接是否正确', 'error');
-    } finally {
-      addBtn.disabled = false;
-      addBtn.textContent = '添加产品';
-    }
-  }
-
-  /**
-   * 显示确认弹窗
-   */
-  showConfirmModal(productData) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay visible';
-    overlay.innerHTML = `
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3>确认添加产品</h3>
-          <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="product-preview">
-            <div class="preview-row">
-              <span class="label">产品名称</span>
-              <span class="value">${productData.name || '-'}</span>
-            </div>
-            <div class="preview-row">
-              <span class="label">品牌 | 类别</span>
-              <span class="value">${productData.brand || '-'} | ${productData.category || '-'}</span>
-            </div>
-            <div class="preview-row">
-              <span class="label">价格</span>
-              <span class="preview-price">¥${(productData.price || 0).toLocaleString()}</span>
-            </div>
-            <div class="preview-row">
-              <span class="label">CPU</span>
-              <span class="value">${productData.cpu || '-'}</span>
-            </div>
-            <div class="preview-row">
-              <span class="label">显卡</span>
-              <span class="value">${productData.gpu || '-'}</span>
-            </div>
-            <div class="preview-row">
-              <span class="label">内存</span>
-              <span class="value">${productData.ram || '-'}</span>
-            </div>
-            <div class="preview-row">
-              <span class="label">硬盘</span>
-              <span class="value">${productData.storage || '-'}</span>
-            </div>
-            <div class="preview-row">
-              <span class="label">屏幕</span>
-              <span class="value">${productData.screen_size ? productData.screen_size + ' 英寸' : '-'}</span>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" id="modal-cancel">取消</button>
-          <button class="btn btn-primary" id="modal-confirm">确认添加</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    // 关闭按钮
-    overlay.querySelector('.modal-close').addEventListener('click', () => {
-      this.closeModal(overlay);
-    });
-
-    overlay.querySelector('#modal-cancel').addEventListener('click', () => {
-      this.closeModal(overlay);
-    });
-
-    overlay.querySelector('#modal-confirm').addEventListener('click', async () => {
-      await this.confirmAddProduct(productData, overlay);
-    });
-
-    // 点击遮罩关闭
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        this.closeModal(overlay);
-      }
-    });
-  }
-
-  /**
-   * 关闭弹窗
-   */
-  closeModal(overlay) {
-    overlay.classList.remove('visible');
-    setTimeout(() => {
-      if (overlay.parentNode) {
-        overlay.parentNode.removeChild(overlay);
-      }
-    }, 200);
-  }
-
-  /**
-   * 确认添加产品
-   */
-  async confirmAddProduct(productData, overlay) {
-    const confirmBtn = overlay.querySelector('#modal-confirm');
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = '添加中...';
-
-    try {
-      const result = await api.addProduct(productData);
-
-      if (!result.success) {
-        throw new Error(result.error || '添加失败');
-      }
-
-      this.showToast('产品添加成功！', 'success');
-      this.closeModal(overlay);
-
-      // 清空输入框
-      const linkInput = document.getElementById('product-link-input');
-      if (linkInput) linkInput.value = '';
-
-      // 刷新数据
-      await this.loadData();
-      this.applyFilters();
-
-    } catch (error) {
-      console.error('Confirm add error:', error);
-      this.showToast(error.message || '添加产品失败', 'error');
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = '确认添加';
-    }
   }
 
   /**
@@ -287,6 +95,7 @@ class App {
         container: paramContainer,
         onChange: () => this.applyFilters(),
       });
+      this.paramFilter.extractOptionsFromProducts(this.products);
     }
 
     // 散点图
@@ -343,9 +152,22 @@ class App {
   extractCpuType(cpu) {
     if (!cpu) return 'Other';
     const upper = cpu.toUpperCase();
-    if (upper.includes('INTEL') || upper.includes('CORE I')) return 'Intel';
-    if (upper.includes('AMD') || upper.includes('RYZEN')) return 'AMD';
-    if (upper.includes('APPLE') || upper.includes('M1') || upper.includes('M2') || upper.includes('M3')) return 'Apple';
+    const lower = cpu.toLowerCase();
+
+    // Apple Silicon
+    if (lower.includes('m1') || lower.includes('m2') || lower.includes('m3') || lower.includes('apple')) return 'Apple';
+
+    // AMD: Ryzen系列, R5/R7/R9, Ryzen AI, R AI
+    if (lower.includes('ryzen') || lower.includes('r5 ') || lower.includes('r7 ') || lower.includes('r9 ') ||
+        lower.startsWith('r5') || lower.startsWith('r7') || lower.startsWith('r9') ||
+        lower.includes('amd') || lower.includes('radeon') || lower.includes('r ai')) return 'AMD';
+
+    // Intel: Core i系列, Ultra系列, Core 5/7/9系列, C5/C7/C9系列(赛扬), I5/I7/I9
+    if (lower.includes('core i') || lower.includes('intel') || lower.includes('ultra') ||
+        lower.includes('core 5') || lower.includes('core 7') || lower.includes('core 9') ||
+        lower.startsWith('c5-') || lower.startsWith('c7-') || lower.startsWith('c9-') ||
+        upper.includes('I5-') || upper.includes('I7-') || upper.includes('I9-')) return 'Intel';
+
     return 'Other';
   }
 
@@ -378,6 +200,7 @@ class App {
       if (paramFilters.storage && product.storage !== paramFilters.storage) return false;
       if (paramFilters.gpu && product.gpu !== paramFilters.gpu) return false;
       if (paramFilters.screen_size && product.screen_size.toString() !== paramFilters.screen_size) return false;
+      if (paramFilters.series && paramFilters.series.length > 0 && !paramFilters.series.includes(product.series)) return false;
 
       return true;
     });
@@ -389,11 +212,6 @@ class App {
    * 渲染组件
    */
   render() {
-    // 更新参数筛选的可选项
-    if (this.paramFilter) {
-      this.paramFilter.extractOptionsFromProducts(this.products);
-    }
-
     // 更新散点图
     if (this.scatterPlot) {
       this.scatterPlot.updateData(this.filteredProducts);
