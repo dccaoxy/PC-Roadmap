@@ -298,14 +298,7 @@ class ScatterPlot {
           },
           scale: 1.4,
           label: {
-            show: true,
-            position: 'right',
-            distance: 8,
-            fontSize: 11,
-            color: '#475569',
-            backgroundColor: 'rgba(255,255,255,0.95)',
-            padding: [3, 6],
-            borderRadius: 3,
+            show: false,  // 关闭额外的悬浮标签，使用 tooltip 显示完整信息
           },
         },
       };
