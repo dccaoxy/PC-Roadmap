@@ -1,6 +1,6 @@
 /**
  * ParamFilter.js - 参数筛选组件
- * CPU / 内存 / 硬盘 / 显卡 / 屏幕尺寸 下拉筛选
+ * 所有筛选项都支持多选
  */
 
 class ParamFilter {
@@ -8,16 +8,16 @@ class ParamFilter {
     this.container = container;
     this.onChange = onChange;
     this.filters = {
-      cpu_type: '',
-      cpu: '',
-      ram: '',
-      storage: '',
-      gpu: '',
-      screen_size: '',
+      cpu_type: [],
+      cpu: [],
+      ram: [],
+      storage: [],
+      gpu: [],
+      screen_size: [],
       series: [],
     };
     this.availableOptions = {
-      cpu_type: ['Intel', 'AMD', 'Apple'],
+      cpu_type: [],
       cpu: [],
       ram: [],
       storage: [],
@@ -46,7 +46,6 @@ class ParamFilter {
     products.forEach(p => {
       if (p.cpu) {
         options.cpu.add(p.cpu);
-        // 从CPU型号提取类型
         const cpuType = this.extractCpuType(p.cpu);
         if (cpuType) cpuTypes.add(cpuType);
       }
@@ -57,7 +56,6 @@ class ParamFilter {
       if (p.series) options.series.add(p.series);
     });
 
-    // 转换为排序后的数组
     this.availableOptions = {
       cpu_type: Array.from(cpuTypes).sort(),
       cpu: Array.from(options.cpu).sort(),
@@ -76,28 +74,21 @@ class ParamFilter {
    */
   extractCpuType(cpu) {
     if (!cpu) return null;
-    const upper = cpu.toUpperCase();
     const lower = cpu.toLowerCase();
     
-    // Apple Silicon
     if (lower.includes('m1') || lower.includes('m2') || lower.includes('m3') || lower.includes('apple')) return 'Apple';
-    
-    // AMD: Ryzen系列, R5/R7/R9, Ryzen AI, R AI
     if (lower.includes('ryzen') || lower.includes('r5 ') || lower.includes('r7 ') || lower.includes('r9 ') || 
         lower.startsWith('r5') || lower.startsWith('r7') || lower.startsWith('r9') ||
         lower.includes('amd') || lower.includes('radeon') || lower.includes('r ai')) return 'AMD';
-    
-    // Intel: Core i系列, Ultra系列, Core 5/7/9系列, C5/C7/C9系列(赛扬)
     if (lower.includes('core i') || lower.includes('intel') || lower.includes('ultra') || 
         lower.includes('core 5') || lower.includes('core 7') || lower.includes('core 9') ||
-        lower.startsWith('c5-') || lower.startsWith('c7-') || lower.startsWith('c9-') ||
-        upper.includes('I5-') || upper.includes('I7-') || upper.includes('I9-')) return 'Intel';
+        lower.startsWith('c5-') || lower.startsWith('c7-') || lower.startsWith('c9-')) return 'Intel';
     
     return 'Other';
   }
 
   /**
-   * 内存排序（按 GB 数值）
+   * 内存排序
    */
   sortRam(ramList) {
     return ramList.sort((a, b) => {
@@ -108,7 +99,7 @@ class ParamFilter {
   }
 
   /**
-   * 存储排序（按 GB 数值）
+   * 存储排序
    */
   sortStorage(storageList) {
     return storageList.sort((a, b) => {
@@ -126,8 +117,53 @@ class ParamFilter {
     const upper = str.toUpperCase();
     let num = parseInt(upper) || 0;
     if (upper.includes('TB')) num *= 1000;
-    else if (upper.includes('GB')) num *= 1;
     return num;
+  }
+
+  /**
+   * 生成多选下拉HTML
+   */
+  createMultiSelectDropdown(param, label, options) {
+    const triggerId = `${param}-trigger`;
+    const panelId = `${param}-panel`;
+    const checkboxesId = `${param}-checkboxes`;
+    const textId = `${param}-text`;
+
+    return `
+      <div class="param-filter-group">
+        <label>${label}</label>
+        <div class="series-dropdown" id="${param}-dropdown">
+          <button type="button" class="series-dropdown-trigger" id="${triggerId}">
+            <span class="series-dropdown-text" id="${textId}">全部</span>
+            <span class="series-dropdown-arrow">▼</span>
+          </button>
+          <div class="series-dropdown-panel" id="${panelId}" style="display:none;">
+            <div class="series-dropdown-search">
+              <input type="text" placeholder="搜索..." id="${param}-search">
+            </div>
+            <div class="series-dropdown-checkboxes" id="${checkboxesId}">
+              ${options.map(opt => `
+                <div class="series-checkbox-item" data-value="${this.escapeHtml(opt)}">
+                  <span class="series-checkbox-box${this.filters[param].includes(opt) ? ' checked' : ''}" data-checkbox="${this.escapeHtml(opt)}"></span>
+                  <span class="series-checkbox-text">${this.escapeHtml(opt)}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="series-dropdown-footer">
+              <button type="button" class="series-dropdown-close" id="${param}-close-btn">完成</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * HTML转义
+   */
+  escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   /**
@@ -135,91 +171,13 @@ class ParamFilter {
    */
   render() {
     const html = `
-      <div class="param-filter-group">
-        <label>CPU类型</label>
-        <select data-param="cpu_type">
-          <option value="">全部</option>
-          ${this.availableOptions.cpu_type.map(opt => `
-            <option value="${opt}" ${this.filters.cpu_type === opt ? 'selected' : ''}>${opt}</option>
-          `).join('')}
-        </select>
-      </div>
-
-      <div class="param-filter-group">
-        <label>CPU型号</label>
-        <select data-param="cpu">
-          <option value="">全部</option>
-          ${this.availableOptions.cpu.map(opt => `
-            <option value="${opt}" ${this.filters.cpu === opt ? 'selected' : ''}>${opt}</option>
-          `).join('')}
-        </select>
-      </div>
-
-      <div class="param-filter-group">
-        <label>内存</label>
-        <select data-param="ram">
-          <option value="">全部</option>
-          ${this.availableOptions.ram.map(opt => `
-            <option value="${opt}" ${this.filters.ram === opt ? 'selected' : ''}>${opt}</option>
-          `).join('')}
-        </select>
-      </div>
-
-      <div class="param-filter-group">
-        <label>硬盘</label>
-        <select data-param="storage">
-          <option value="">全部</option>
-          ${this.availableOptions.storage.map(opt => `
-            <option value="${opt}" ${this.filters.storage === opt ? 'selected' : ''}>${opt}</option>
-          `).join('')}
-        </select>
-      </div>
-
-      <div class="param-filter-group">
-        <label>显卡</label>
-        <select data-param="gpu">
-          <option value="">全部</option>
-          ${this.availableOptions.gpu.map(opt => `
-            <option value="${opt}" ${this.filters.gpu === opt ? 'selected' : ''}>${opt}</option>
-          `).join('')}
-        </select>
-      </div>
-
-      <div class="param-filter-group">
-        <label>屏幕</label>
-        <select data-param="screen_size">
-          <option value="">全部</option>
-          ${this.availableOptions.screen_size.map(opt => `
-            <option value="${opt}" ${this.filters.screen_size === opt ? 'selected' : ''}>${opt}</option>
-          `).join('')}
-        </select>
-      </div>
-
-      <div class="param-filter-group series-filter-group">
-        <label>产品系列</label>
-        <div class="series-dropdown" id="series-dropdown">
-          <button type="button" class="series-dropdown-trigger" id="series-trigger">
-            <span class="series-dropdown-text">全部</span>
-            <span class="series-dropdown-arrow">▼</span>
-          </button>
-          <div class="series-dropdown-panel" id="series-panel" style="display:none;">
-            <div class="series-dropdown-search">
-              <input type="text" placeholder="搜索..." id="series-search">
-            </div>
-            <div class="series-dropdown-checkboxes" id="series-checkboxes">
-              ${this.availableOptions.series.map(opt => `
-                <div class="series-checkbox-item" data-value="${opt}">
-                  <span class="series-checkbox-box${this.filters.series.includes(opt) ? ' checked' : ''}" data-checkbox="${opt}"></span>
-                  <span class="series-checkbox-text">${opt}</span>
-                </div>
-              `).join('')}
-            </div>
-            <div class="series-dropdown-footer">
-              <button type="button" class="series-dropdown-close" id="series-close-btn">完成</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      ${this.createMultiSelectDropdown('cpu_type', 'CPU类型', this.availableOptions.cpu_type)}
+      ${this.createMultiSelectDropdown('cpu', 'CPU型号', this.availableOptions.cpu)}
+      ${this.createMultiSelectDropdown('ram', '内存', this.availableOptions.ram)}
+      ${this.createMultiSelectDropdown('storage', '硬盘', this.availableOptions.storage)}
+      ${this.createMultiSelectDropdown('gpu', '显卡', this.availableOptions.gpu)}
+      ${this.createMultiSelectDropdown('screen_size', '屏幕', this.availableOptions.screen_size)}
+      ${this.createMultiSelectDropdown('series', '产品系列', this.availableOptions.series)}
 
       <div class="filter-actions">
         <button class="btn btn-outline btn-sm" id="clear-filters">清空筛选</button>
@@ -234,27 +192,17 @@ class ParamFilter {
    * 绑定事件
    */
   attachEvents() {
-    const selects = this.container.querySelectorAll('select[data-param]');
-    selects.forEach(select => {
-      select.addEventListener('change', (e) => {
-        const param = e.target.dataset.param;
-        if (param === 'series') {
-          // 多选：获取所有选中项
-          const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
-          this.filters.series = selected;
-        } else {
-          this.filters[param] = e.target.value;
-        }
-        this.notifyChange();
-      });
-    });
+    const params = ['cpu_type', 'cpu', 'ram', 'storage', 'gpu', 'screen_size', 'series'];
 
-    // 系列下拉多选事件
-    const trigger = this.container.querySelector('#series-trigger');
-    const panel = this.container.querySelector('#series-panel');
-    const checkboxesContainer = this.container.querySelector('#series-checkboxes');
+    params.forEach(param => {
+      const trigger = this.container.querySelector(`#${param}-trigger`);
+      const panel = this.container.querySelector(`#${param}-panel`);
+      const checkboxesContainer = this.container.querySelector(`#${param}-checkboxes`);
+      const searchInput = this.container.querySelector(`#${param}-search`);
+      const closeBtn = this.container.querySelector(`#${param}-close-btn`);
 
-    if (trigger && panel) {
+      if (!trigger || !panel) return;
+
       let panelOpen = false;
 
       const openPanel = (e) => {
@@ -262,6 +210,8 @@ class ParamFilter {
         e.preventDefault();
         panelOpen = true;
         panel.style.display = 'block';
+        if (searchInput) searchInput.value = '';
+        this.filterCheckboxes(param, '');
       };
 
       const closePanel = () => {
@@ -279,16 +229,15 @@ class ParamFilter {
           const value = item.dataset.value;
           const box = item.querySelector('.series-checkbox-box');
 
-          // 切换选中状态
-          if (this.filters.series.includes(value)) {
-            this.filters.series = this.filters.series.filter(v => v !== value);
+          if (this.filters[param].includes(value)) {
+            this.filters[param] = this.filters[param].filter(v => v !== value);
             box.classList.remove('checked');
           } else {
-            this.filters.series.push(value);
+            this.filters[param].push(value);
             box.classList.add('checked');
           }
 
-          this.updateSeriesDropdownText();
+          this.updateDropdownText(param);
           this.notifyChange();
         }
       });
@@ -299,7 +248,6 @@ class ParamFilter {
       });
 
       // 完成按钮关闭面板
-      const closeBtn = this.container.querySelector('#series-close-btn');
       if (closeBtn) {
         closeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -314,8 +262,19 @@ class ParamFilter {
         }
       });
 
-      this.updateSeriesDropdownText();
-    }
+      // 搜索过滤
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          this.filterCheckboxes(param, e.target.value);
+        });
+        searchInput.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
+      }
+
+      // 初始更新文字
+      this.updateDropdownText(param);
+    });
 
     const clearBtn = this.container.querySelector('#clear-filters');
     if (clearBtn) {
@@ -324,17 +283,35 @@ class ParamFilter {
   }
 
   /**
-   * 更新系列下拉按钮文字
+   * 过滤复选框（搜索功能）
    */
-  updateSeriesDropdownText() {
-    const textEl = this.container.querySelector('.series-dropdown-text');
+  filterCheckboxes(param, searchText) {
+    const checkboxes = this.container.querySelector(`#${param}-checkboxes`);
+    if (!checkboxes) return;
+
+    const items = checkboxes.querySelectorAll('.series-checkbox-item');
+    const lowerSearch = searchText.toLowerCase();
+
+    items.forEach(item => {
+      const text = item.querySelector('.series-checkbox-text').textContent.toLowerCase();
+      item.style.display = text.includes(lowerSearch) ? '' : 'none';
+    });
+  }
+
+  /**
+   * 更新下拉按钮文字
+   */
+  updateDropdownText(param) {
+    const textEl = this.container.querySelector(`#${param}-text`);
     if (!textEl) return;
-    if (this.filters.series.length === 0) {
+
+    const filters = this.filters[param];
+    if (!filters || filters.length === 0) {
       textEl.textContent = '全部';
-    } else if (this.filters.series.length === 1) {
-      textEl.textContent = this.filters.series[0];
+    } else if (filters.length === 1) {
+      textEl.textContent = filters[0];
     } else {
-      textEl.textContent = `已选 ${this.filters.series.length}`;
+      textEl.textContent = `已选 ${filters.length}`;
     }
   }
 
@@ -359,14 +336,9 @@ class ParamFilter {
    */
   clear() {
     Object.keys(this.filters).forEach(key => {
-      if (key === 'series') {
-        this.filters[key] = [];
-      } else {
-        this.filters[key] = '';
-      }
+      this.filters[key] = [];
     });
     this.render();
-    this.updateSeriesDropdownText();
     this.notifyChange();
   }
 

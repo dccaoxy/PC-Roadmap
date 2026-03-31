@@ -186,16 +186,16 @@ class App {
         return false;
       }
 
-      // 参数筛选
-      if (paramFilters.cpu_type) {
+      // 参数筛选（现在都支持多选）
+      if (paramFilters.cpu_type && paramFilters.cpu_type.length > 0) {
         const cpuType = this.extractCpuType(product.cpu);
-        if (cpuType !== paramFilters.cpu_type) return false;
+        if (!paramFilters.cpu_type.includes(cpuType)) return false;
       }
-      if (paramFilters.cpu && product.cpu !== paramFilters.cpu) return false;
-      if (paramFilters.ram && product.ram !== paramFilters.ram) return false;
-      if (paramFilters.storage && product.storage !== paramFilters.storage) return false;
-      if (paramFilters.gpu && product.gpu !== paramFilters.gpu) return false;
-      if (paramFilters.screen_size && product.screen_size.toString() !== paramFilters.screen_size) return false;
+      if (paramFilters.cpu && paramFilters.cpu.length > 0 && !paramFilters.cpu.includes(product.cpu)) return false;
+      if (paramFilters.ram && paramFilters.ram.length > 0 && !paramFilters.ram.includes(product.ram)) return false;
+      if (paramFilters.storage && paramFilters.storage.length > 0 && !paramFilters.storage.includes(product.storage)) return false;
+      if (paramFilters.gpu && paramFilters.gpu.length > 0 && !paramFilters.gpu.includes(product.gpu)) return false;
+      if (paramFilters.screen_size && paramFilters.screen_size.length > 0 && !paramFilters.screen_size.includes(product.screen_size?.toString())) return false;
       if (paramFilters.series && paramFilters.series.length > 0 && !paramFilters.series.includes(product.series)) return false;
 
       return true;
