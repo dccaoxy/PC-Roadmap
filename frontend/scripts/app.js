@@ -132,11 +132,7 @@ class App {
    * 处理 hover
    */
   handleHover(product, event) {
-    if (product) {
-      this.productCard.show(product, event);
-    } else {
-      this.productCard.hide();
-    }
+    // 已禁用 ProductCard，使用 scatterPlot 的 tooltip 显示完整信息
   }
 
   /**
