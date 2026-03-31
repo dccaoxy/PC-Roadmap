@@ -3,7 +3,9 @@
  * 默认 API 地址为 http://localhost:3000，可通过环境变量覆盖
  */
 
-const API_BASE = 'http://192.168.0.9:3001';
+const API_BASE = (typeof window !== 'undefined' && window.ENV && window.ENV.API_BASE)
+  ? window.ENV.API_BASE
+  : 'http://localhost:3001';
 
 /**
  * 通用 fetch 封装

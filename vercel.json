@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/products/brands",
+      "dest": "/api/products/brands.js"
+    },
+    {
+      "src": "/api/products/[^/]+$",
+      "dest": "/api/products/[id].js"
+    },
+    {
+      "src": "/api/products",
+      "dest": "/api/products/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ]
+}
